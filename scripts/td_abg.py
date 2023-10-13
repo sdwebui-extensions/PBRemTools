@@ -28,15 +28,32 @@ import PIL
 import torch
 from segment_anything import SamAutomaticMaskGenerator, sam_model_registry
 from scripts.sa_mask import  get_sa_mask
+from modules.shared import encode_image_to_base64, cmd_opts
+from modules.api.api import decode_base64_to_image
+import requests
+import json
 
 
 # Declare Execution Providers
 providers = ['CUDAExecutionProvider', 'CPUExecutionProvider']
 
 # Download and host the model
-model_path = huggingface_hub.hf_hub_download(
-    "skytnt/anime-seg", "isnetis.onnx")
-rmbg_model = rt.InferenceSession(model_path, providers=providers)
+if cmd_opts.just_ui:
+    model_path = ''
+    rmbg_model = ''
+else:
+    os.makedirs(f'{cmd_opts.data_dir}/models/PB', exist_ok=True)
+    model_path = f'{cmd_opts.data_dir}/models/PB/isnetis.onnx'
+    if not os.path.exists(model_path):
+        try:
+            os.system(f'wget https://huggingface.co/skytnt/anime-seg/resolve/main/isnetis.onnx -O {model_path}')
+        except:
+            print(f'please download https://huggingface.co/skytnt/anime-seg/resolve/main/isnetis.onnx to {cmd_opts.data_dir}/models/PB')
+            print(f'please download https://huggingface.co/skytnt/anime-seg/resolve/main/isnetis.onnx to {cmd_opts.data_dir}/models/PB')
+            print(f'please download https://huggingface.co/skytnt/anime-seg/resolve/main/isnetis.onnx to {cmd_opts.data_dir}/models/PB')
+            print(f'please download https://huggingface.co/skytnt/anime-seg/resolve/main/isnetis.onnx to {cmd_opts.data_dir}/models/PB')
+
+    rmbg_model = rt.InferenceSession(model_path, providers=providers)
 
 def get_mask(img, s=1024):
     img = (img / 255).astype(np.float32)
@@ -87,6 +104,39 @@ def refinement(img, mask, fast, psp_L):
 
 
 def get_foreground(img, td_abg_enabled, h_split, v_split, n_cluster, alpha, th_rate, cascadePSP_enabled, fast, psp_L, sa_enabled ,query, model_name, predicted_iou_threshold, stability_score_threshold, clip_threshold):
+
+    if cmd_opts.just_ui:
+        req_data = dict(
+            img = encode_image_to_base64(img),
+            td_abg_enabled = td_abg_enabled,
+            h_split = h_split,
+            v_split = v_split,
+            n_cluster = n_cluster,
+            alpha = alpha,
+            th_rate = th_rate,
+            cascadePSP_enabled = cascadePSP_enabled,
+            fast = fast,
+            psp_L = psp_L,
+            sa_enabled = sa_enabled,
+            model_name = model_name,
+            query = query,
+            predicted_iou_threshold = predicted_iou_threshold,
+            stability_score_threshold = stability_score_threshold,
+            clip_threshold = clip_threshold
+        )
+        try:
+            req_result = requests.post(f'{cmd_opts.server_path}/pbrem/predict', json=req_data)
+        except Exception as e:
+            print(f'request {cmd_opts.server_path}/pbrem/predict failed with exception {e}')
+            return img[:, :, 0], img
+        if req_result.status_code!=200:
+            print(f'request {cmd_opts.server_path}/pbrem/predict failed with exception {req_result.text}')
+            return img[:, :, 0], img
+        data = json.loads(req_result.text)
+        img = np.array(decode_base64_to_image(data['img']))
+        mask = np.array(decode_base64_to_image(data['mask']))
+        return mask, img
+
     df = rgb2df(img)
     image_width = img.shape[1] 
     image_height = img.shape[0] 

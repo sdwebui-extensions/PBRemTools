@@ -20,12 +20,17 @@ except Exception:
 
 from modules.safe import unsafe_torch_load, load
 from modules.devices import device
+from modules.paths import models_path
+from modules.shared import cmd_opts
 
 model_cache = OrderedDict()
-sam_model_dir = os.path.join(
-    extensions_dir, "PBRemTools/models/")
-model_list = [f for f in os.listdir(sam_model_dir) if os.path.isfile(
-    os.path.join(sam_model_dir, f)) and f.split('.')[-1] != 'txt']
+sam_model_dir = os.path.join(models_path, "sam")
+os.makedirs(sam_model_dir, exist_ok=True)
+if cmd_opts.just_ui:
+    model_list = ['sam_vit_b_01ec64.pth', 'sam_vit_h_4b8939.pth', 'sam_vit_l_0b3195.pth']
+else:
+    model_list = [f for f in os.listdir(sam_model_dir) if os.path.isfile(
+        os.path.join(sam_model_dir, f)) and f.split('.')[-1] != 'txt']
 
 MAX_WIDTH = MAX_HEIGHT = 800
 CLIP_WIDTH = CLIP_HEIGHT = 300

@@ -19,12 +19,16 @@ except Exception:
 
 from collections import OrderedDict
 from PIL import Image
+from modules.paths import models_path
 
 model_cache = OrderedDict()
-sam_model_dir = os.path.join(
-    extensions_dir, "PBRemTools/models/")
-model_list = [f for f in os.listdir(sam_model_dir) if os.path.isfile(
-    os.path.join(sam_model_dir, f)) and f.split('.')[-1] != 'txt']
+sam_model_dir = os.path.join(models_path, "sam")
+os.makedirs(sam_model_dir, exist_ok=True)
+if shared.cmd_opts.just_ui:
+    model_list = ['sam_vit_b_01ec64.pth', 'sam_vit_h_4b8939.pth', 'sam_vit_l_0b3195.pth']
+else:
+    model_list = [f for f in os.listdir(sam_model_dir) if os.path.isfile(
+        os.path.join(sam_model_dir, f)) and f.split('.')[-1] != 'txt']
 
 def processing(single_image, batch_image, input_dir, output_dir, output_mask_dir, show_result, input_tab_state, *rem_args):
     # 0: single
