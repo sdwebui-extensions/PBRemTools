@@ -45,14 +45,15 @@ else:
     os.makedirs(f'{cmd_opts.data_dir}/models/PB', exist_ok=True)
     model_path = f'{cmd_opts.data_dir}/models/PB/isnetis.onnx'
     if not os.path.exists(model_path):
-        try:
-            os.system(f'wget https://huggingface.co/skytnt/anime-seg/resolve/main/isnetis.onnx -O {model_path}')
-        except:
-            print(f'please download https://huggingface.co/skytnt/anime-seg/resolve/main/isnetis.onnx to {cmd_opts.data_dir}/models/PB')
-            print(f'please download https://huggingface.co/skytnt/anime-seg/resolve/main/isnetis.onnx to {cmd_opts.data_dir}/models/PB')
-            print(f'please download https://huggingface.co/skytnt/anime-seg/resolve/main/isnetis.onnx to {cmd_opts.data_dir}/models/PB')
-            print(f'please download https://huggingface.co/skytnt/anime-seg/resolve/main/isnetis.onnx to {cmd_opts.data_dir}/models/PB')
-
+        if os.path.exists('/code/stable-diffusion-webui/models/PB/isnetis.onnx'):
+            model_path = '/code/stable-diffusion-webui/models/PB/isnetis.onnx'
+        elif os.path.exists('/stable-diffusion-cache/models/PB/isnetis.onnx'):
+            model_path = '/stable-diffusion-cache/models/PB/isnetis.onnx'
+        else:
+            try:
+                os.system(f'wget https://huggingface.co/skytnt/anime-seg/resolve/main/isnetis.onnx -O {model_path}')
+            except:
+                print(f'please download https://huggingface.co/skytnt/anime-seg/resolve/main/isnetis.onnx to {cmd_opts.data_dir}/models/PB')
     rmbg_model = rt.InferenceSession(model_path, providers=providers)
 
 def get_mask(img, s=1024):
